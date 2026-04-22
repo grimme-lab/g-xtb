@@ -1,85 +1,82 @@
 # 🚧 g-xTB — Development Version
 
-This is a preliminary version of g-xTB, a general-purpose semiempirical quantum mechanical method approximating ωB97M-V/def2-TZVPPD properties.
+This is a preliminary version of g-xTB, a general-purpose semiempirical quantum mechanical method approximating ωB97M-V/def2-TZVPPD properties for all elements up to lawrencium (Z = 1–103).
 
 ## 📄 Preprint
 
-See the preprint at ChemRxiv: https://chemrxiv.org/engage/chemrxiv/article-details/685434533ba0887c335fc974
+See the [ChemRxiv](https://chemrxiv.org/engage/chemrxiv/article-details/685434533ba0887c335fc974) preprint for the first g-xTB version. The present version includes substantial improvements and changes beyond the preprint.
 
 ## 📦 Installation
 
+We provide statically linked binaries of the [xtb](https://github.com/grimme-lab/xtb) program ([modified version 6.7.1](https://github.com/thfroitzheim/xtb/tree/gxtb)), interfacing with a modified version of the [tblite](https://github.com/tblite/tblite) library. Binaries are available for Linux, Windows, and ARM-based macOS.
+
+Extract the tarball or ZIP archive for your operating system from the `binaries` directory into a location on your `PATH` (for example, `$HOME/bin`). No external parameter file is required.
+
 > [!WARNING]
-> `gxtb` currently works only on Linux-based machines.
-
-Place the `gxtb` binary in a directory belonging to your `$PATH` variable (e.g., `$USER/bin/`).
-
-Place the following parameter and basis files into a dedicated directory, which you export in the `$GXTBHOME` variable: 
-- `.gxtb` — parameter file (`-p`)
-- `.eeq` — electronegativity equilibration parameters (`-e`)
-- `.basisq` — atom-in-molecule AO basis (`-b`)
-If `$GXTBHOME` is not defined, the `gxtb` binary searches first in your home directory `$HOME` and then in the current directory (`./`). You can overwrite the location of the parameter files with the resepctive command-line flags (`-p`, `-e`, and `-b`). 
+> The macOS and Windows packages include shared libraries (`.dylib` or `.dll`) that must be discoverable at runtime. In most cases, adding the `bin` directory to your `PATH` is sufficient. On macOS, external `.dylib` files may trigger security warnings.
 
 ## Usage
 
-By default, `gxtb` expects a coordinate file in TURBOMOLE format (`coord`) using atomic units (i.e. Bohr). 
+The `xtb` binary is largely equivalent to the current [bleeding-edge xtb version](https://github.com/grimme-lab/xtb/releases/tag/bleed). To run a g-xTB calculation, simply add the `--gxtb` flag. For general `xtb` usage, see the [documentation](https://xtb-docs.readthedocs.io/en/latest/) or run `xtb --help`. 
 
-### Run examples
+### Singlepoint calculation
 
-```
-gxtb                       # default: coord file = TURBOMOLE format
-gxtb -c <coord_file_name>  # explicit coordinate file (TURBOMOLE or XYZ)
-gxtb -c <xyz_file_name>    # XYZ file supported
+```bash
+xtb struc.xyz --gxtb
 ```
 
-Place the following optional control files in your working directory:
-- `.CHRG` # Integer charge of the system (default: neutral)
-- `.UHF` # Integer number of open shells (e.g., 2 for triplet, 0 for singlet UKS)
+You can specify the total charge with `--chrg` or a `.CHRG` file (default: neutral), and the number of unpaired electrons with `--uhf` or a `.UHF` file (default: singlet for systems with an even number of electrons, doublet for systems with an odd number of electrons).
 
-If `.CHRG` or `.UHF` are not present: 
-- Even electrons: neutral singlet (RKS)
-- Odd electrons: neutral doublet (UKS)
+Open-shell g-xTB calculations use an unrestricted wavefunction, which is always triggered if `--uhf` or a `.UHF` file is present, even if the number of unpaired electrons is set to zero. 
 
-## ⚙️ Additional Features
+Control the verbosity of printed properties with `--verbose` and `--silent`.
 
-### Numerical Gradient
+### Geometry optimization
 
-```
-gxtb -grad
-```
-Or if a file named `.GRAD` is present, a numerical gradient is computed (expensive!).
-Molecular symmetry is exploited to speed up calculations.
-
-### Geometry Optimization with `xtb`
-
-To optimize geometries using xtb with gxtb as a driver:
-```
-xtb struc.xyz --driver "gxtb -grad -c xtbdriver.xyz" --opt
-```
-Or with a `coord` file in TURBOMOLE format:
-```
-xtb coord --driver "gxtb -grad -c xtbdriver.coord" --opt
+```bash
+xtb struc.xyz --gxtb --opt
 ```
 
-💡 You may use `--opt loose` for faster convergence, as there is currently no analytical nuclear gradient — gradients are evaluated numerically and can be noisy.
+Constraints, scans, molecular dynamics, and related features can be controlled through the `xcontrol` input file. To print the gradient, add the `--grad` flag. 
 
 ### Numerical Hessian
 
+```bash
+xtb struc.xyz --gxtb --hess
 ```
-gxtb -hess
+
+Computes a numerical Hessian based on the analytic gradient. For the numerical derivative, tight SCF convergence is beneficial. `--acc` defines a multiplicative factor for the convergence criteria (recommended for hessians: 0.1–0.01).
+
+> [!WARNING]
+> The macOS binary has a problem with the diagonalization during parallel numerical Hessian computations (serial runs are not affected). 
+
+### Molden file
+
+```bash
+xtb struc.xyz --gxtb --molden
 ```
-Computes a numerical Hessian (very expensive).
 
-## Current Coverage
+Writes a Cartesian Molden file including basis-set and orbital information for visualization and post-processing.
 
-- Reasonably parameterized for elements Z = 1–58, 71–89, and 92
-- A revised dispersion model (`revD4`) is in progress and may slightly affect final results
+### Solvation
 
-## 📊 Output and Analysis
+g-xTB currently has only limited solvation support through either the generalized Born model with finite epsilon (`--gbe`) or the domain-decomposition conductor-like screening model (`--cosmo`). Both models include only the electrostatic contribution to the solvation free energy. A properly parameterized solvation model for g-xTB is already under development.
 
-- All computed properties aim to approximate ωB97M-V/def2-TZVPPD
-- EEQ_BC charges mimic Hirshfeld charges from that reference
-- Use the `-molden` flag to write a `.molden` file with orbitals and basis info:
+```bash
+xtb struc.xyz --gxtb --gbe toluene
+xtb struc.xyz --gxtb --cosmo water
 ```
-gxtb -molden
-```
-Useful for visualization and post-processing.
+
+> [!WARNING]
+> Preliminary testing indicates that the current form of `gbe` can be unstable during geometry optimization. In addition, the current `cosmo` implementation does not include the solute response to the solvent polarization, which makes the gradient inconsistent. Both models should therefore be used with caution, and results should be evaluated carefully.
+
+## ⚙️ Known limitations
+
+At present, not all `xtb` features are supported for g-xTB. Known limitations include:
+
+- the aISS docking module (`dock`)
+- orbital localization (`--lmo`) 
+- point charge embedding (`$pcem`)
+- cube file generation (`$cube`)
+
+If you encounter another limitation or a bug, please open an issue!
