@@ -45,7 +45,7 @@ Constraints, scans, molecular dynamics, and related features can be controlled t
 xtb struc.xyz --gxtb --hess
 ```
 
-Computes a numerical Hessian based on the analytic gradient. For the numerical derivative, tight SCF convergence is beneficial. `--acc` defines a multiplicative factor for the convergence criteria (recommended for hessians: 0.1–0.01).
+Computes a numerical Hessian based on the analytic gradient. For the numerical derivative, tight SCF convergence is beneficial. `--acc` defines a multiplicative factor for the convergence criteria (default is a value of 0.2 for the numerical Hessian if nothing else is specified).
 
 > [!WARNING]
 > The macOS binary has a problem with the diagonalization during parallel numerical Hessian computations (serial runs are not affected). 
