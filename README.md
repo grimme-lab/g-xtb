@@ -19,6 +19,9 @@ Extract the tarball or ZIP archive for your operating system from the `binaries`
 
 The `xtb` binary is largely equivalent to the current [bleeding-edge xtb version](https://github.com/grimme-lab/xtb/releases/tag/bleed). To run a g-xTB calculation, simply add the `--gxtb` flag. For general `xtb` usage, see the [documentation](https://xtb-docs.readthedocs.io/en/latest/) or run `xtb --help`. 
 
+> [!WARNING]
+> g-xTB is currently only available for molecular systems! Periodic boundary conditions will be supported in an upcoming release. 
+
 ### Singlepoint calculation
 
 ```bash
